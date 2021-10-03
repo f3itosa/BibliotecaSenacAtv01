@@ -50,9 +50,11 @@ namespace Biblioteca.Models
                             query = bc.Livros;
                         break;
                     }
+                    
                 }
                 else
                 {
+                    
                     // caso filtro não tenha sido informado
                     query = bc.Livros;
                 }

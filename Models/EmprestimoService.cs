@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
+using System.Collections;
 
 namespace Biblioteca.Models
 {
@@ -30,11 +31,50 @@ namespace Biblioteca.Models
             }
         }
 
-        public ICollection<Emprestimo> ListarTodos(FiltrosEmprestimos filtro)
+        public ICollection<Emprestimo> ListarTodos(FiltrosEmprestimos filtro = null)
         {
             using(BibliotecaContext bc = new BibliotecaContext())
             {
-                return bc.Emprestimos.Include(e => e.Livro).ToList();
+                IQueryable<Emprestimo> query;
+                if(filtro !=null)
+                {
+                    //definindo dinamicamente a filtragem
+                    switch(filtro.TipoFiltro)
+                    {
+                        case "Usuario":
+                            query = bc.Emprestimos.Where(l => l.NomeUsuario.Contains(filtro.Filtro));
+                        break;
+
+                        case "Livro":
+                        List<Livro> LivrosFiltro = bc.Livros.Where(l => l.Titulo.Contains(filtro.Filtro)).ToList();
+
+                           List<int> LivrosId = new List<int>();
+                            for(int book = 0; book <LivrosFiltro.Count; book++){
+                                LivrosId.Add(LivrosFiltro[book].Id);
+                            }
+                            query = bc.Emprestimos.Where( l => LivrosId.Contains(l.LivroId));
+                            var debug = query.ToList();
+                            break;
+
+                            default:
+                            query = bc.Emprestimos;
+                            break;
+
+                        
+                    }
+                }
+                else
+                {
+                    // caso filtro não tenha sido informado
+                    query = bc.Emprestimos;
+                }
+                List<Emprestimo> ListaBusca = query.OrderByDescending(l => l.DataEmprestimo).ToList();
+                   for(int book = 0; book < ListaBusca.Count; book++){
+                       ListaBusca[book].Livro = bc.Livros.Find(ListaBusca[book].LivroId);
+                   }
+
+                //ordenação padrão
+                return ListaBusca;
             }
         }
 
